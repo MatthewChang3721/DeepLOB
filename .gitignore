@@ -1,0 +1,37 @@
+# Data folder
+Data/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# pytest
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Package info
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
