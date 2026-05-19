@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-def process_data(inputfile, outputfile, alpha = 0.0001):
+def process_data(inputfile, outputfile, alpha = 0.0002):
     # calculate the micro price for each level, and add it as a new column to the dataframe
     def price_micro(df, level: int):
         price_cols = [f'bid{level}', f'ask{level}']
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     inputpath = 'Data/Raw_data/'
     outputpath = 'Data/Processed_data/'
-    alpha = 0.0001
+    alpha = 0.0002
 
     raw_files = list(Path(inputpath).glob('*.csv'))
 
