@@ -83,7 +83,7 @@ def window_normalize(inputpath, outputpath, window_size = 5):
 
         processed_rows += len(current_data)
 
-        file_name = f'normalized_{unique_dates[i]}.csv'
+        file_name = f'normalized_{unique_dates[i]}'
         current_data.to_csv(f'{outputpath}{file_name}.csv', index=False)
         print(f'Data saved to {outputpath}{file_name}.csv')
     print(f"Window normalization completed. Total processed rows: {processed_rows}.")
