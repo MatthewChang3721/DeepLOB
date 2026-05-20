@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from collections import deque
 
 def process_data(inputfile, outputfile, alpha = 0.0002):
     # calculate the micro price for each level, and add it as a new column to the dataframe
@@ -52,47 +53,42 @@ def window_normalize(inputpath, outputpath, window_size = 5):
     folder = Path(inputpath)
     csv_files = sorted(folder.glob('*.csv'))
 
+    buffer = deque(maxlen=window_size + 1)
+
     cols_to_keep = [2, 3, 4, 5, 6, 9]
-    df_list = [] 
+    processed_rows = 0
+    
     for file in csv_files:
-        print(f"Processing file: {file.name}")
+        print(f"Loading file: {file.name}")
         
         df = pd.read_csv(file, usecols=cols_to_keep)
-        df['date'] = file.stem[-4:]  
+        buffer.append(df)
+        processing_date = file.stem[-4:]
 
-        df_list.append(df)
+        if len(buffer) == window_size + 1:
+            stats_list = list(buffer)[:-1]
+            stats_df = pd.concat(stats_list, ignore_index=True)
 
-    big_dataframe = pd.concat(df_list, ignore_index=True)
+            target_df = buffer[-1]
+            feature_cols = [col for col in target_df.columns if col.startswith('price_micro')]
+            processed_rows += len(target_df)
 
-    print(f"Shape: {big_dataframe.shape[0]} rows, {big_dataframe.shape[1]} columns")
-    print(big_dataframe.head())
+            hist_mean = stats_df[feature_cols].mean()
+            hist_std = stats_df[feature_cols].std()
 
-    # apply window normalization
-    feature_cols = [col for col in big_dataframe.columns if col.startswith('price_micro')]
-    unique_dates = big_dataframe['date'].unique()
-    print("Unique dates in the dataset:", unique_dates)
+            normalized_df = target_df.copy()
+            normalized_df[feature_cols] = (normalized_df[feature_cols] - hist_mean) / hist_std
 
-    processed_rows = 0
-    for i in range(window_size, len(unique_dates)):
-        window_data = big_dataframe[big_dataframe['date'].isin(unique_dates[i-window_size:i])]
-        hist_mean = window_data[feature_cols].mean()
-        hist_std = window_data[feature_cols].std()
-        current_data = big_dataframe[big_dataframe['date'] == unique_dates[i]].copy()
-        current_data[feature_cols] = (current_data[feature_cols] - hist_mean) / hist_std
-        current_data.drop(columns=['date'], inplace=True)
-
-        processed_rows += len(current_data)
-
-        file_name = f'normalized_{unique_dates[i]}'
-        current_data.to_csv(f'{outputpath}{file_name}.csv', index=False)
-        print(f'Data saved to {outputpath}{file_name}.csv')
+            file_name = f'normalized_{processing_date}'
+            normalized_df.to_csv(f'{outputpath}{file_name}.csv', index=False)
+            print(f'Data saved to {outputpath}{file_name}.csv')
     print(f"Window normalization completed. Total processed rows: {processed_rows}.")
 
 if __name__ == "__main__":
 
     inputpath = 'Data/Raw_data/'
     outputpath = 'Data/Processed_data/'
-    alpha = 0.0002
+    alpha = 0.0001
 
     raw_files = list(Path(inputpath).glob('*.csv'))
 
