@@ -34,7 +34,8 @@ def process_data(inputfile, outputfile, alpha = 0.0002):
     df_selected = pd.concat([df.iloc[:, [0]], df.iloc[:, -6:]], axis=1)
 
     # calculate the price move and price move percentage
-    df_selected['price_move'] = (df_selected['MidPrice'].shift(-10) - df_selected['MidPrice'])
+    m_plus_t = df_selected['MidPrice'].rolling(window=10).mean().shift(-10)
+    df_selected['price_move'] = (m_plus_t - df_selected['MidPrice'])
     df_selected['price_move_pctg'] = df_selected['price_move'] / df_selected['MidPrice']
     
     # calculate the price move label
@@ -88,6 +89,8 @@ if __name__ == "__main__":
 
     inputpath = 'Data/Raw_data/'
     outputpath = 'Data/Processed_data/'
+    path = Path(outputpath)
+    path.mkdir(parents=True, exist_ok=True)
     alpha = 0.0001
 
     raw_files = list(Path(inputpath).glob('*.csv'))
@@ -99,4 +102,6 @@ if __name__ == "__main__":
 
     inputpath_normalized = 'Data/Processed_data/'
     outputpath_normalized = 'Data/Normalized_data/' 
+    path = Path(outputpath_normalized)
+    path.mkdir(parents=True, exist_ok=True)
     window_normalize(inputpath_normalized, outputpath_normalized, window_size = 5)
