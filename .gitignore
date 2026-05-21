@@ -35,3 +35,9 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# py file
+data_fetch.py
+
+# md file
+Deep LOB revisement document.md

@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from collections import deque
 
-def process_data(inputfile, outputfile, alpha = 0.0002):
+def process_data(inputfile, outputfile, alpha = 0.0001):
     # calculate the micro price for each level, and add it as a new column to the dataframe
     def price_micro(df, level: int):
         price_cols = [f'bid{level}', f'ask{level}']
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     outputpath = 'Data/Processed_data/'
     path = Path(outputpath)
     path.mkdir(parents=True, exist_ok=True)
-    alpha = 0.0001
+    alpha = 0.00005
 
     raw_files = list(Path(inputpath).glob('*.csv'))
 
