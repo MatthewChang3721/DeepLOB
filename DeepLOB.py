@@ -81,11 +81,13 @@ class DeepLOB(nn.Module):
         # Convolutional layers
         self.causal_pad = nn.ZeroPad2d((0, 0, 3, 0))  # Pad only on the top for time dimension
 
-        self.conv_time1 = nn.Conv2d(1, 16, kernel_size=(4, 1))
+        self.conv_feat1 = nn.Conv2d(1, 16, kernel_size=(1, 2), stride=(1, 2))
+        self.conv_time1 = nn.Conv2d(16, 16, kernel_size=(4, 1))
         self.conv_time2 = nn.Conv2d(16, 16, kernel_size=(4, 1))
+        self.conv_feat2 = nn.Conv2d(16, 16, kernel_size=(1, 2), stride=(1,2))
         self.conv_time3 = nn.Conv2d(16, 16, kernel_size=(4, 1))
         self.conv_time4 = nn.Conv2d(16, 16, kernel_size=(4, 1))
-        self.conv_feat1 = nn.Conv2d(16, 16, kernel_size=(1, num_features))
+        self.conv_feat3 = nn.Conv2d(16, 16, kernel_size=(1, num_features))
         self.conv_time5 = nn.Conv2d(16, 16, kernel_size=(4, 1))
         self.conv_time6 = nn.Conv2d(16, 16, kernel_size=(4, 1))
 
@@ -113,6 +115,9 @@ class DeepLOB(nn.Module):
         x = x.unsqueeze(1)            # [batch, 1, time_steps, num_features]
 
         # Convolution Blocks
+        # Space Convolutions Block1 (1*2)@16 stride(1*2)
+        x = F.leaky_relu(self.conv_feat1(x), negative_slope=0.01)
+
         # Time Convolutions Block1 (4*1)@16
         x = self.causal_pad(x)  # Apply causal padding before the time convolution
         x = F.leaky_relu(self.conv_time1(x), negative_slope=0.01)
@@ -121,6 +126,9 @@ class DeepLOB(nn.Module):
         x = self.causal_pad(x)  # Apply causal padding before the time convolution
         x = F.leaky_relu(self.conv_time2(x), negative_slope=0.01)
         
+        # Space Convolutions Block2 (1*2)@16 stride(1*2)
+        x = F.leaky_relu(self.conv_feat2(x), negative_slope=0.01)
+
         # Time Convolutions Block3 (4*1)@16
         x = self.causal_pad(x)  # Apply causal padding before the time convolution
         x = F.leaky_relu(self.conv_time3(x), negative_slope=0.01)
@@ -130,7 +138,7 @@ class DeepLOB(nn.Module):
         x = F.leaky_relu(self.conv_time4(x), negative_slope=0.01)
         
         # Feature Convolution (1*10)@16
-        x = F.leaky_relu(self.conv_feat1(x), negative_slope=0.01)
+        x = F.leaky_relu(self.conv_feat3(x), negative_slope=0.01)
 
         # Time Convolutions Block5 (4*1)@16
         x = self.causal_pad(x)  # Apply causal padding before the time convolution

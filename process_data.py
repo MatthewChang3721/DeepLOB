@@ -20,7 +20,7 @@ def process_data(inputfile, outputfile, label_method, FE: bool = True,alpha = 0.
     # calculate the micro price for each level, and add it as a new column to the dataframe
     def price_micro(df, level: int):
         price_cols = [f'bid{level}', f'ask{level}']
-        size_cols = [f'bidcumSize{level}', f'askcumSize{level}']
+        size_cols = [f'bidSize{level}', f'askSize{level}']
         df[f'price_micro_{level}'] = (df[price_cols[0]] * df[size_cols[1]] + df[price_cols[1]] * df[size_cols[0]]) / (df[size_cols[0]] + df[size_cols[1]])
         return None
     
@@ -35,10 +35,6 @@ def process_data(inputfile, outputfile, label_method, FE: bool = True,alpha = 0.
     
     # read the csv file, only keep the timestamp and the 20 levels of price and volume
     df = pd.read_csv(inputfile, usecols = [0] + list(range(5,25)))
-
-    for i in range(1,6):
-        df[f'askcumSize{i}'] = df[f'askSize{i}'] + (df[f'askcumSize{i-1}'] if i != 1 else 0)
-        df[f'bidcumSize{i}'] = df[f'bidSize{i}'] + (df[f'bidcumSize{i-1}'] if i != 1 else 0)
 
     # Caculate the mid price
     df['MidPrice'] = (df['bid1'] + df['ask1']) / 2
@@ -118,6 +114,13 @@ def window_normalize(inputpath, outputpath, FE: bool = True, window_size = 5):
             normalized_df = target_df.copy()
             normalized_df[feature_cols] = (normalized_df[feature_cols] - hist_mean) / hist_std
 
+            if FE == False:
+                types = ['ask', 'askSize', 'bid', 'bidSize']
+                levels = range(1, 6) 
+                cols = [f"{t}{l}" for l in levels for t in types]
+                cols.append('price_move_label')
+                normalized_df = normalized_df[cols]
+
             file_name = f'normalized_{processing_date}'
             normalized_df.to_csv(f'{outputpath}{file_name}.csv', index=False)
             print(f'Data saved to {outputpath}{file_name}.csv')
@@ -130,7 +133,7 @@ if __name__ == "__main__":
     path = Path(outputpath)
     path.mkdir(parents=True, exist_ok=True)
     alpha = 0.00005
-    FE = True
+    FE = False
 
     raw_files = list(Path(inputpath).glob('*.csv'))
 
