@@ -140,7 +140,7 @@ if __name__ == "__main__":
     for raw_file in raw_files:
         print(f'Processing file:{raw_file.name}')
         outputfile = f'{outputpath}processed_{raw_file.stem[-4:]}.csv'
-        process_data(raw_file, outputfile, label_method='l2', FE = FE, alpha = alpha)
+        process_data(raw_file, outputfile, label_method='l3', FE = FE, alpha = alpha)
 
     inputpath_normalized = 'Data/Processed_data/'
     outputpath_normalized = 'Data/Normalized_data/' 

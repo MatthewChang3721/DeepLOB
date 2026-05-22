@@ -21,8 +21,8 @@ class TimeSeriesDataset(Dataset):
         x_end = idx + self.window_size
         X = self.data[x_start:x_end, :-1]  # Features
 
-        y_start = x_end
-        y_end = x_end + self.target_size
+        y_start = x_end - 1
+        y_end = x_end - 1 + self.target_size
         Y = self.data[y_start:y_end, -1]  # Target label
 
         return X, Y
@@ -198,7 +198,7 @@ class FocalLoss(nn.Module):
         else:
             return focal_loss
 
-def train_model(model, train_loader, optimizer, criterion, device):
+def train_model(model, train_loader, optimizer, criterion, device, lr_scheduler = None):
     model.train()  # Set model to training mode
     total_loss = 0.0
     correct = 0
@@ -213,8 +213,12 @@ def train_model(model, train_loader, optimizer, criterion, device):
         output = model(data)
         loss = criterion(output, label)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         
         optimizer.step()
+
+        if lr_scheduler is not None:
+            lr_scheduler.step()
 
         _, predicted = torch.max(output.data, 1)
         total += label.size(0)
@@ -224,7 +228,8 @@ def train_model(model, train_loader, optimizer, criterion, device):
 
         current_avg_loss = total_loss / (i + 1)
         current_avg_acc = 100 * correct / total
-        pbar.set_postfix({'loss': f'{current_avg_loss:.4f}', 'acc': f'{current_avg_acc:.2f}%'})
+        current_lr = optimizer.param_groups[0]['lr']
+        pbar.set_postfix({'loss': f'{current_avg_loss:.4f}', 'acc': f'{current_avg_acc:.2f}%', 'lr': f'{current_lr:.6f}'})
 
     avg_loss = total_loss / len(train_loader)
 
