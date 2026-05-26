@@ -25,7 +25,7 @@ The project uses intraday limit order book data from various trading days and sy
 
 * **`label_method`**: 
     * 选项: `'l1'`, `'l2'`, `'l3'`
-    * 描述: 决定了标签的生成逻辑。建议优先使用 `'l3'`（双向平滑，滤噪效果更好）。
+    * 描述: 决定了标签的生成逻辑。建议优先使用 `'l3'`（双向平滑，滤噪效果更好）， 对应的alpha为0.75bp。
 * **`alpha`**: 
     * 描述: 价格波动阈值。用于将价格变动百分比划分为 `Down (-1)`, `Neutral (0)`, `Up (1)`。
 * **`window_normalize` -> `window_size`**: 

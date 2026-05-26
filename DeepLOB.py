@@ -27,11 +27,11 @@ class TimeSeriesDataset(Dataset):
 
         return X, Y
 
-def create_dataloader(start_files: int, num_files: int, window_size: int = 200, target_size: int = 1, batch_size: int = 32, shuffle: bool = True):
+def create_dataloader(inputpath, start_files: int, num_files: int, window_size: int = 200, target_size: int = 1, batch_size: int = 32, shuffle: bool = True):
     from pathlib import Path
     all_daily_ds = []
 
-    csv_files = sorted(Path('Data/Normalized_data').glob('normalized_*.csv'))[start_files:start_files + num_files]
+    csv_files = sorted(Path(inputpath).glob('normalized_*.csv'))[start_files:start_files + num_files]
     print(f"Found {len(csv_files)} CSV files for this dataloader.")
 
     label_counts_overall = np.zeros(3, dtype=int)  # To count occurrences of each label across all files
@@ -54,7 +54,7 @@ def create_dataloader(start_files: int, num_files: int, window_size: int = 200, 
     final_dataset = ConcatDataset(all_daily_ds)
 
     # DataLoader
-    data_loader = DataLoader(final_dataset, batch_size=batch_size, shuffle=shuffle)
+    data_loader = DataLoader(final_dataset, batch_size=batch_size, shuffle=shuffle, drop_last= True)
 
     print(f'\nTotal days used for training: {len(all_daily_ds)}')
     print(f'Total samples in final dataset: {len(final_dataset)}')

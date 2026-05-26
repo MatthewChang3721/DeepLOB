@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 from collections import deque
 
-def process_data(inputfile, outputfile, label_method, FE: bool = True,alpha = 0.0001):
+def process_data(inputfile, outputfile, label_method, label_window: int = 10, FE: bool = True, alpha = 0.0001):
     '''
     label_method: 'l1 - direct price move: pt+10 - pt'; 'l2 - m+t smooth: (m+t - pt)/pt'; 'l3 - m+t and m-t smooth: (m+t - m-t)/m-t'
     FE: 'True - Conduct feature engineering'; 'False - No feature engineering'
@@ -51,15 +51,15 @@ def process_data(inputfile, outputfile, label_method, FE: bool = True,alpha = 0.
 
     # calculate the price move and price move percentage
     if label_method == 'l1':
-        df['price_move'] = (df_selected['MidPrice'].shift(-10) - df_selected['MidPrice'])
+        df_selected['price_move'] = (df_selected['MidPrice'].shift(-label_window) - df_selected['MidPrice'])
         df_selected['price_move_pctg'] = df_selected['price_move'] / df_selected['MidPrice']
     elif label_method == 'l2':
-        m_plus_t = df_selected['MidPrice'].rolling(window=10).mean().shift(-10)
+        m_plus_t = df_selected['MidPrice'].rolling(window=abs(label_window)).mean().shift(-label_window)
         df_selected['price_move'] = (m_plus_t - df_selected['MidPrice'])
         df_selected['price_move_pctg'] = df_selected['price_move'] / df_selected['MidPrice']
     elif label_method == 'l3':
-        m_plus_t = df_selected['MidPrice'].rolling(window=10).mean().shift(-10)
-        m_minus_t = df_selected['MidPrice'].rolling(window=10).mean().shift(10)
+        m_plus_t = df_selected['MidPrice'].rolling(window=abs(label_window)).mean().shift(-label_window)
+        m_minus_t = df_selected['MidPrice'].rolling(window=abs(label_window)).mean().shift(label_window)
         df_selected['price_move'] = m_plus_t - m_minus_t
         df_selected['price_move_pctg'] = df_selected['price_move'] / m_minus_t
     
