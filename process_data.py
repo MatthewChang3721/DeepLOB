@@ -59,7 +59,7 @@ def process_data(inputfile, outputfile, label_method, label_window: int = 10, FE
         df_selected['price_move_pctg'] = df_selected['price_move'] / df_selected['MidPrice']
     elif label_method == 'l3':
         m_plus_t = df_selected['MidPrice'].rolling(window=abs(label_window)).mean().shift(-label_window)
-        m_minus_t = df_selected['MidPrice'].rolling(window=abs(label_window)).mean().shift(label_window)
+        m_minus_t = df_selected['MidPrice'].rolling(window=abs(label_window)).mean().shift()
         df_selected['price_move'] = m_plus_t - m_minus_t
         df_selected['price_move_pctg'] = df_selected['price_move'] / m_minus_t
     

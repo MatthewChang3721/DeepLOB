@@ -14,16 +14,16 @@ class TimeSeriesDataset(Dataset):
         self.target_size = target_size
 
     def __len__(self):
-        return len(self.data) - self.window_size - self.target_size + 1
+        return len(self.data) - self.window_size - self.target_size + 2
     
     def __getitem__(self, idx):
         x_start = idx
         x_end = idx + self.window_size
-        X = self.data[x_start:x_end, :-1]  # Features
+        X = self.data[x_start:x_end, :-1].to(torch.float32)  # Features
 
         y_start = x_end - 1
         y_end = x_end - 1 + self.target_size
-        Y = self.data[y_start:y_end, -1]  # Target label
+        Y = self.data[y_start:y_end, -1].to(torch.long).view(-1)  # Target label
 
         return X, Y
 
@@ -100,7 +100,7 @@ class DeepLOB(nn.Module):
         self.incp_Path2_pad = nn.ZeroPad2d((0, 0, 4, 0))  # Pad only on the top for time dimension
         self.incp_Path2_2 = nn.Conv2d(32, 32, kernel_size=(5,1))
 
-        self.incp_Path3_pad = nn.ZeroPad2d((0, 0, 2, 0))  # Pad only on the top for time dimension
+        self.incp_Path3_pad = nn.ConstantPad2d((0, 0, 2, 0), float('-inf'))  # Pad only on the top for time dimension
         self.incp_Path3_1 = nn.MaxPool2d(kernel_size=(3,1), stride=(1,1))
         self.incp_Path3_2 = nn.Conv2d(16, 32, kernel_size=(1,1))
 
@@ -257,4 +257,43 @@ def validate_engine(model, val_loader, criterion, device):
             total += label.size(0)
             correct += (predicted == label).sum().item()
             
-    return total_loss / len(val_loader), 100 * correct / total, all_preds, all_labels   
+    return total_loss / len(val_loader), 100 * correct / total, all_preds, all_labels
+
+class EarlyStopping:
+    '''
+    Monitor Metric, trigger early stop
+    '''
+    def __init__(self, patience = 20, verbose = False , detla = 0.0, path = 'checkpoint.pth', monitor_loss = True):
+        self.patience = patience
+        self.verbose = verbose
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+        self.val_min = np.inf if monitor_loss else -np.inf
+        self.delta = detla
+        self.path = path
+        self.monitor_loss = monitor_loss
+
+    def __call__(self, val_metric, model):
+        score = -val_metric if self.monitor_loss else val_metric
+
+        if self.best_score is None:
+            self.best_score = score
+            self.save_checkpoint(val_metric, model)
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose: 
+                print(f'{val_metric}. Early Stopping counter: {self.counter} out of {self.patience}')
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.save_checkpoint(val_metric, model)
+            self.counter = 0
+
+    def save_checkpoint(self, val_metric, model):
+        if self.verbose:
+            metric_name = 'Loss' if self.monitor_loss else 'Metric'
+            print(f'Validation {metric_name} improved ({self.val_min:.6f} --> {val_metric}). Saving model ...')
+        torch.save(model.state_dict(), self.path)
+        self.val_min = val_metric
