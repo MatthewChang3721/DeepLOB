@@ -126,6 +126,54 @@ def window_normalize(inputpath, outputpath, FE: bool = True, window_size = 5):
             print(f'Data saved to {outputpath}{file_name}.csv')
     print(f"Window normalization completed. Total processed rows: {processed_rows}.")
 
+def window_normalize_FE(inputpath, outputpath, window_size = 5):
+    folder = Path(inputpath)
+    output_dir = Path(outputpath)
+    output_dir.mkdir(parents=True, exist_ok=True) # Ensure Output path exist
+
+    csv_files = sorted(folder.glob('*.csv'))
+
+    buffer = deque(maxlen=window_size + 1)
+
+    cols_to_keep = [1, 2, 3, 4, 5, 6, 9]
+
+    processed_rows = 0
+
+    for file in csv_files:
+        print(f"Loading and processing file: {file.name}")
+        
+        df = pd.read_csv(file, usecols=cols_to_keep)
+        processing_date = file.stem[-4:]
+        
+        # Midprice Normalize
+        feature_cols = [col for col in df.columns if col.startswith('price_micro')]
+        for col in feature_cols:
+            df[col] = (df[col] / df['MidPrice'] - 1) * 10000
+        buffer.append(df)
+
+        # Normalize Midprice
+        if len(buffer) == window_size + 1:
+            # Calculate window stats
+            stats_list = list(buffer)[:-1]
+            stats_df = pd.concat(stats_list, ignore_index=True)
+
+            hist_mean = stats_df['MidPrice'].mean()
+            hist_std = stats_df['MidPrice'].std()
+
+            # Get Target dataframe
+            target_df = buffer[-1]
+
+            normalized_df = target_df.copy()
+            normalized_df['MidPrice'] = (normalized_df['MidPrice'] - hist_mean) / hist_std
+            processed_rows += len(normalized_df)
+
+            # Save file
+            file_name = f'normalized_{processing_date}.csv'
+            save_path = output_dir / file_name
+            normalized_df.to_csv(save_path, index=False)
+            print(f"Data saved to {save_path}")
+    print(f"Window normalization completed. Total processed rows: {processed_rows}.")
+
 if __name__ == "__main__":
 
     inputpath = 'Data/Raw_data/'
